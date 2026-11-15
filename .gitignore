@@ -1,0 +1,16 @@
+.idea
+.env
+/CLAUDE.local.md
+/CODEX.local.md
+/.claude
+*.doc
+*.docx
+
+# tools
+/tools/*
+
+# for claude cli
+/package.json
+/package-lock.json
+/node_modules
+/gold_miner.txt
