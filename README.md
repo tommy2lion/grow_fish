@@ -1,2 +1,2 @@
-# gold_miner
-gold miner course project
+# grow_fish
+grow fish course project

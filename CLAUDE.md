@@ -4,13 +4,13 @@
 
 ## 项目简介
 
-gold_miner（黄金矿工）课程设计项目。`docs/` 目录存放课程设计指导书、实验报告及相关文档。
+grow_fish（大鱼吃小鱼）课程设计项目（远程仓库已更名为 grow_fish）。`docs/` 目录存放课程设计指导书、实验报告及相关文档。
 
 ## 文档命名规范
 
 - 新建文档统一命名为：`YYYYMMDDHHMMSS-文档实际内容.md`
   - 时间前缀为文档创建时刻，共 14 位数字（年 4 位、月 2 位、日 2 位、时 2 位、分 2 位、秒 2 位）。
-  - 示例：`20261115194530-黄金矿工需求分析.md`
+  - 示例：`20261115215306-大鱼吃小鱼需求文档.md`
 - 缺省保存位置为 `docs/` 目录；用户明确指定其他位置时除外。
 
 ## 代码提交规范
@@ -30,4 +30,4 @@ gold_miner（黄金矿工）课程设计项目。`docs/` 目录存放课程设�
   - `docs: split course design guide into three docs`
   - `chore: add build configuration`
   - `framework: add game main loop skeleton`
-  - `feature_2026: add claw launch and collision detection`
+  - `feature_2026: add fish spawning and collision detection`
