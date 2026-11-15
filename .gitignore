@@ -6,6 +6,9 @@
 *.doc
 *.docx
 
+# reference code
+/refer/*
+
 # generated output
 /spacex/*
 
