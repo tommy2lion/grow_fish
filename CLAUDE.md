@@ -16,4 +16,18 @@ gold_miner（黄金矿工）课程设计项目。`docs/` 目录存放课程设�
 ## 代码提交规范
 
 - 每次提交使用简洁的英文 commit 信息，不超过 30 个单词。
-- 采用祈使语气概括本次改动，示例：`Add miner claw rendering and collision detection`。
+- 采用祈使语气概括本次改动。
+- 按改动类型添加前缀：
+
+| 分类 | 前缀 | 用途 |
+| --- | --- | --- |
+| 文档类 | `docs: ` | 文档新增或修改（如 `docs/` 下的需求、学习、报告文档） |
+| 文档类 | `chore: ` | 杂项事务（配置、依赖、清理等） |
+| 代码类 | `framework: ` | 框架、基础结构与公共设施相关改动 |
+| 代码类 | `feature_YYYY: ` | 功能开发相关改动（`YYYY` 为功能标识或年份，按实际填写） |
+
+- 示例：
+  - `docs: split course design guide into three docs`
+  - `chore: add build configuration`
+  - `framework: add game main loop skeleton`
+  - `feature_2026: add claw launch and collision detection`
