@@ -26,9 +26,11 @@ typedef struct Game {
 
     int mouseX;
     int mouseY;
+    int viewW;
+    int viewH;
 } Game;
 
-void game_init(Game* g);
+void game_init(Game* g, int viewW, int viewH);
 void game_update(Game* g, Input* in, float dt);
 void game_start_round(Game* g);
 void game_to_menu(Game* g);

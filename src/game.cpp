@@ -15,8 +15,10 @@ static void game_spawn_decor(Game* g) {
     }
 }
 
-void game_init(Game* g) {
+void game_init(Game* g, int viewW, int viewH) {
     memset(g, 0, sizeof(Game));
+    g->viewW = viewW > 0 ? viewW : WIN_W;
+    g->viewH = viewH > 0 ? viewH : WIN_H;
     g->state = STATE_LOGIN;
     player_init(&g->player, L"Player");
     fishlist_init(&g->fish);
@@ -112,8 +114,8 @@ static void game_handle_buttons(Game* g, Input* in) {
     if (!in->mouseClicked) {
         return;
     }
-    int mx = in->mouseX;
-    int my = in->mouseY;
+    int mx = g->mouseX;
+    int my = g->mouseY;
 
     if (hit_rect(mx, my, BTN_START_X, BTN_Y, BTN_W, BTN_H)) {
         if (g->state == STATE_MENU || g->state == STATE_PLAYING ||
@@ -184,8 +186,10 @@ static void game_check_collisions(Game* g) {
 }
 
 void game_update(Game* g, Input* in, float dt) {
-    g->mouseX = in->mouseX;
-    g->mouseY = in->mouseY;
+    g->mouseX = (int)((float)in->mouseX * (float)WIN_W / (float)g->viewW);
+    g->mouseY = (int)((float)in->mouseY * (float)WIN_H / (float)g->viewH);
+    g->mouseX = (int)clampf((float)g->mouseX, 0.0f, (float)(WIN_W - 1));
+    g->mouseY = (int)clampf((float)g->mouseY, 0.0f, (float)(WIN_H - 1));
     g->animTime += dt;
 
     if (g->state == STATE_LOGIN) {

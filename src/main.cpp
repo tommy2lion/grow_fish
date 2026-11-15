@@ -16,13 +16,25 @@ int main(void) {
         ShowWindow(console, SW_HIDE);
     }
 
-    initgraph(WIN_W, WIN_H);
-    setbkmode(TRANSPARENT);
-    BeginBatchDraw();
-    render_init();
+    int screenW = GetSystemMetrics(SM_CXSCREEN);
+    int screenH = GetSystemMetrics(SM_CYSCREEN);
+    if (screenW <= 0 || screenH <= 0) {
+        screenW = WIN_W;
+        screenH = WIN_H;
+    }
+
+    initgraph(screenW, screenH);
+
+    HWND hwnd = GetHWnd();
+    SetWindowLongPtr(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, screenW, screenH,
+                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    SetForegroundWindow(hwnd);
+
+    render_init(screenW, screenH);
 
     Game game;
-    game_init(&game);
+    game_init(&game, screenW, screenH);
 
     Input input;
     input_init(&input);
@@ -39,11 +51,11 @@ int main(void) {
         input_update(&input);
         game_update(&game, &input, dt);
         render_frame(&game);
-        FlushBatchDraw();
+        render_present();
         Sleep(16);
     }
 
-    EndBatchDraw();
+    SetWorkingImage(NULL);
     closegraph();
     return 0;
 }

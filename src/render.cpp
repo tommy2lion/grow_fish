@@ -3,6 +3,11 @@
 static const COLORREF C_TEXT = RGB(230, 242, 255);
 static const COLORREF C_ACCENT = RGB(255, 205, 80);
 
+static IMAGE g_canvas;
+static IMAGE g_screen;
+static int g_viewW = WIN_W;
+static int g_viewH = WIN_H;
+
 static COLORREF lerp_color(COLORREF a, COLORREF b, float t) {
     t = clampf(t, 0.0f, 1.0f);
     int r = (int)(GetRValue(a) + (GetRValue(b) - GetRValue(a)) * t);
@@ -30,11 +35,31 @@ static void text_center(int cx, int y, const wchar_t* s, int size, COLORREF colo
     outtextxy(cx - textwidth(s) / 2, y, s);
 }
 
-void render_init(void) {
+void render_init(int screenW, int screenH) {
+    g_viewW = screenW > 0 ? screenW : WIN_W;
+    g_viewH = screenH > 0 ? screenH : WIN_H;
+    g_canvas.Resize(WIN_W, WIN_H);
+    g_screen.Resize(g_viewW, g_viewH);
+    SetWorkingImage(&g_canvas);
     setbkcolor(RGB(6, 22, 42));
     cleardevice();
     setbkmode(TRANSPARENT);
     set_font(20, false);
+}
+
+void render_present(void) {
+    HDC screenDC = GetImageHDC(&g_screen);
+    HDC canvasDC = GetImageHDC(&g_canvas);
+    if (screenDC && canvasDC) {
+        SetStretchBltMode(screenDC, HALFTONE);
+        SetBrushOrgEx(screenDC, 0, 0, NULL);
+        StretchBlt(screenDC, 0, 0, g_viewW, g_viewH,
+                   canvasDC, 0, 0, WIN_W, WIN_H, SRCCOPY);
+    }
+
+    SetWorkingImage(NULL);
+    putimage(0, 0, &g_screen);
+    SetWorkingImage(&g_canvas);
 }
 
 void render_button(int x, int y, int w, int h, const wchar_t* label, bool hover, bool enabled) {
