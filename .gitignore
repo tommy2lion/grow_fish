@@ -12,6 +12,12 @@
 # generated output
 /spacex/*
 
+# build output
+/build/
+/.vs/
+/records.txt
+*.vcxproj.user
+
 # python
 /.venv
 __pycache__/
