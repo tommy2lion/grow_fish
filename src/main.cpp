@@ -1,7 +1,9 @@
 #include "common.h"
+#include "assets.h"
 #include "game.h"
 #include "input.h"
 #include "render.h"
+#include "sound.h"
 
 #include <imm.h>
 #pragma comment(lib, "imm32.lib")
@@ -31,6 +33,8 @@ int main(void) {
                  SWP_FRAMECHANGED | SWP_SHOWWINDOW);
     SetForegroundWindow(hwnd);
 
+    assets_init();
+    sound_init();
     render_init(screenW, screenH);
 
     Game game;
@@ -49,12 +53,14 @@ int main(void) {
         last = now;
 
         input_update(&input);
+        sound_update();
         game_update(&game, &input, dt);
         render_frame(&game);
         render_present();
         Sleep(16);
     }
 
+    sound_shutdown();
     SetWorkingImage(NULL);
     closegraph();
     return 0;

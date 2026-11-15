@@ -49,6 +49,7 @@
 #define MAX_FISH 24
 #define MAX_RECORDS 10
 #define MAX_NAME 32
+#define MAX_POPUPS 24
 
 typedef enum {
     FISH_SMALL,
@@ -65,6 +66,11 @@ typedef enum {
     STATE_OVER
 } GameState;
 
+typedef enum {
+    MODE_TIME,
+    MODE_LIFE
+} GameMode;
+
 typedef struct Fish {
     FishType type;
     float x, y;
@@ -72,6 +78,9 @@ typedef struct Fish {
     float halfW, halfH;
     int size;
     int score;
+    int variant;
+    int turnsLeft;
+    bool justTurned;
     bool alive;
     struct Fish* next;
 } Fish;
@@ -98,6 +107,13 @@ typedef struct {
     wchar_t name[MAX_NAME];
     int score;
 } ScoreRecord;
+
+typedef struct {
+    float x, y;
+    wchar_t text[32];
+    COLORREF color;
+    DWORD born;
+} Popup;
 
 static inline float clampf(float v, float lo, float hi) {
     return v < lo ? lo : (v > hi ? hi : v);

@@ -19,6 +19,9 @@ static Fish* fish_create(FishType type, float x, float y, float vx, float vy,
     f->halfH = halfH;
     f->size = (int)(halfW * 2.0f);
     f->score = score;
+    f->variant = rand() % 3;
+    f->turnsLeft = 0;
+    f->justTurned = false;
     f->alive = true;
     f->next = NULL;
     return f;
@@ -141,6 +144,14 @@ Fish* fishlist_spawn(FishList* list, float gameW, float gameH) {
     float vy = frand(-18.0f, 18.0f);
 
     Fish* f = fish_create(type, x, y, vx, vy, hw, hh, score);
+    if (f) {
+        /* 大鱼到边缘会掉头一次，小鱼偶尔掉头，增加“猛回头”效果 */
+        if (type == FISH_BIG) {
+            f->turnsLeft = 1;
+        } else if (type == FISH_SMALL && (rand() % 4 == 0)) {
+            f->turnsLeft = 1;
+        }
+    }
     fishlist_append(list, f);
     return f;
 }
@@ -159,6 +170,24 @@ void fishlist_update(FishList* list, float dt, float gameW, float gameH) {
         } else if (cur->y > gameH - cur->halfH - 10.0f) {
             cur->y = gameH - cur->halfH - 10.0f;
             cur->vy = -cur->vy;
+        }
+
+        /* 到达左右边缘时掉头（只对还有掉头次数的鱼生效） */
+        if (cur->turnsLeft > 0) {
+            bool turned = false;
+            if (cur->x < cur->halfW + 6.0f && cur->vx < 0.0f) {
+                cur->x = cur->halfW + 6.0f;
+                cur->vx = -cur->vx;
+                turned = true;
+            } else if (cur->x > gameW - cur->halfW - 6.0f && cur->vx > 0.0f) {
+                cur->x = gameW - cur->halfW - 6.0f;
+                cur->vx = -cur->vx;
+                turned = true;
+            }
+            if (turned) {
+                cur->turnsLeft--;
+                cur->justTurned = true;
+            }
         }
 
         if (cur->x < -cur->halfW * 3.0f || cur->x > gameW + cur->halfW * 3.0f) {

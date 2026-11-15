@@ -74,6 +74,26 @@ void data_save(ScoreRecord records[], int* count, const wchar_t* name, int score
     fclose(fp);
 }
 
+void data_save_last_game(const wchar_t* name, int score, bool win, int mode) {
+    FILE* fp = _wfopen(L"last_game.txt", L"w, ccs=UTF-8");
+    if (!fp) {
+        return;
+    }
+
+    time_t now = time(NULL);
+    struct tm tmv;
+    localtime_s(&tmv, &now);
+
+    fwprintf(fp, L"玩家：%ls\n", name);
+    fwprintf(fp, L"得分：%d\n", score);
+    fwprintf(fp, L"结果：%ls\n", win ? L"过关" : L"失败");
+    fwprintf(fp, L"模式：%ls\n", mode == MODE_TIME ? L"时间模式" : L"生命模式");
+    fwprintf(fp, L"时间：%04d-%02d-%02d %02d:%02d:%02d\n",
+             tmv.tm_year + 1900, tmv.tm_mon + 1, tmv.tm_mday,
+             tmv.tm_hour, tmv.tm_min, tmv.tm_sec);
+    fclose(fp);
+}
+
 int data_high_score(const ScoreRecord records[], int count) {
     return count > 0 ? records[0].score : 0;
 }

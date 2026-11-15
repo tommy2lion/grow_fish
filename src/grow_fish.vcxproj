@@ -148,8 +148,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>xcopy /E /I /Y "$(ProjectDir)..\assets" "$(OutDir)assets"</Command>
+      <Message>Copying game assets...</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="assets.cpp" />
+    <ClCompile Include="sound.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="fish.cpp" />
     <ClCompile Include="player.cpp" />
@@ -159,6 +167,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
+    <ClInclude Include="assets.h" />
+    <ClInclude Include="sound.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="fish.h" />
     <ClInclude Include="player.h" />

@@ -59,6 +59,33 @@ void player_update(Player* p, const Input* in, float dt) {
     p->y = clampf(p->y, p->halfH + 4.0f, GAME_H - p->halfH - 4.0f);
 }
 
+void player_move_toward(Player* p, float tx, float ty, float dt) {
+    float dx = tx - p->x;
+    float dy = ty - p->y;
+    float dist = sqrtf(dx * dx + dy * dy);
+    if (dist < 2.0f) {
+        return;
+    }
+
+    float step = 330.0f * dt;
+    if (step > dist) {
+        step = dist;
+    }
+    float nx = dx / dist;
+    float ny = dy / dist;
+    p->x += nx * step;
+    p->y += ny * step;
+
+    if (nx < -0.05f) {
+        p->dir = -1;
+    } else if (nx > 0.05f) {
+        p->dir = 1;
+    }
+
+    p->x = clampf(p->x, p->halfW + 4.0f, GAME_W - p->halfW - 4.0f);
+    p->y = clampf(p->y, p->halfH + 4.0f, GAME_H - p->halfH - 4.0f);
+}
+
 bool player_invulnerable(const Player* p) {
     return GetTickCount() < p->invulnUntil;
 }

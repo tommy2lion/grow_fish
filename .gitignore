@@ -16,6 +16,7 @@
 /build/
 /.vs/
 /records.txt
+/last_game.txt
 *.vcxproj.user
 
 # python

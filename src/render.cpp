@@ -1,4 +1,9 @@
 #include "render.h"
+#include "assets.h"
+#include "sound.h"
+#include <wingdi.h>
+
+#pragma comment(lib, "msimg32.lib")
 
 static const COLORREF C_TEXT = RGB(230, 242, 255);
 static const COLORREF C_ACCENT = RGB(255, 205, 80);
@@ -7,6 +12,31 @@ static IMAGE g_canvas;
 static IMAGE g_screen;
 static int g_viewW = WIN_W;
 static int g_viewH = WIN_H;
+
+static void draw_sprite(IMAGE* img, int cx, int cy, int w, int h) {
+    if (!img || w <= 0 || h <= 0) {
+        return;
+    }
+
+    HDC dst = GetImageHDC(&g_canvas);
+    HDC src = GetImageHDC(img);
+    if (!dst || !src) {
+        return;
+    }
+
+    BLENDFUNCTION bf;
+    bf.BlendOp = AC_SRC_OVER;
+    bf.BlendFlags = 0;
+    bf.SourceConstantAlpha = 255;
+    bf.AlphaFormat = AC_SRC_ALPHA;
+
+    if (!AlphaBlend(dst, cx - w / 2, cy - h / 2, w, h,
+                    src, 0, 0, img->getwidth(), img->getheight(), bf)) {
+        SetStretchBltMode(dst, COLORONCOLOR);
+        StretchBlt(dst, cx - w / 2, cy - h / 2, w, h,
+                   src, 0, 0, img->getwidth(), img->getheight(), SRCCOPY);
+    }
+}
 
 static COLORREF lerp_color(COLORREF a, COLORREF b, float t) {
     t = clampf(t, 0.0f, 1.0f);
@@ -111,26 +141,45 @@ static void render_game_background(const Game* g) {
         solidellipse(cx - 90, GAME_Y + GAME_H - 54, cx + 90, GAME_Y + GAME_H - 30);
     }
 
-    /* 气泡 */
-    setlinecolor(RGB(70, 160, 220));
-    for (int i = 0; i < 24; i++) {
-        int bx = (i * 97 + (int)(g->animTime * (float)(10 + i % 5) * 2.0f)) % GAME_W;
-        int by = GAME_Y + 40 + (i * 61) % (GAME_H - 100);
-        int r = 2 + i % 4;
-        circle(GAME_X + bx, by, r);
-    }
+    if (assets_ok()) {
+        /* 背景装饰：岩石、水草、气泡 */
+        draw_sprite(assets_bg(BG_ROCK0), GAME_X + 120, GAME_Y + GAME_H - 42, 100, 90);
+        draw_sprite(assets_bg(BG_ROCK1), GAME_X + 300, GAME_Y + GAME_H - 36, 80, 70);
+        draw_sprite(assets_bg(BG_ROCK0), GAME_X + 620, GAME_Y + GAME_H - 44, 110, 95);
 
-    /* 水草 */
-    setlinecolor(RGB(28, 120, 90));
-    for (int i = 0; i < 7; i++) {
-        int baseX = 40 + i * 105;
-        int baseY = GAME_Y + GAME_H - 44;
-        for (int k = 0; k < 5; k++) {
-            int y1 = baseY - k * 16;
-            int x1 = baseX + (int)(sinf(g->animTime * 1.6f + (float)i + (float)k * 0.5f) * 6.0f);
-            int y2 = baseY - (k + 1) * 16;
-            int x2 = baseX + (int)(sinf(g->animTime * 1.6f + (float)i + (float)(k + 1) * 0.5f) * 6.0f);
-            line(x1, y1, x2, y2);
+        for (int i = 0; i < 7; i++) {
+            IMAGE* img = assets_bg((BackgroundSprite)(BG_SEAWEED0 + i % 3));
+            draw_sprite(img, GAME_X + 50 + i * 105, GAME_Y + GAME_H - 60, 60, 110);
+        }
+
+        setlinecolor(RGB(120, 200, 240));
+        for (int i = 0; i < 24; i++) {
+            int bx = (i * 97 + (int)(g->animTime * (float)(10 + i % 5) * 2.0f)) % GAME_W;
+            int by = GAME_Y + 40 + (i * 61) % (GAME_H - 100);
+            int r = 2 + i % 4;
+            circle(GAME_X + bx, by, r);
+        }
+    } else {
+        /* 无素材时的回退绘制 */
+        setlinecolor(RGB(70, 160, 220));
+        for (int i = 0; i < 24; i++) {
+            int bx = (i * 97 + (int)(g->animTime * (float)(10 + i % 5) * 2.0f)) % GAME_W;
+            int by = GAME_Y + 40 + (i * 61) % (GAME_H - 100);
+            int r = 2 + i % 4;
+            circle(GAME_X + bx, by, r);
+        }
+
+        setlinecolor(RGB(28, 120, 90));
+        for (int i = 0; i < 7; i++) {
+            int baseX = 40 + i * 105;
+            int baseY = GAME_Y + GAME_H - 44;
+            for (int k = 0; k < 5; k++) {
+                int y1 = baseY - k * 16;
+                int x1 = baseX + (int)(sinf(g->animTime * 1.6f + (float)i + (float)k * 0.5f) * 6.0f);
+                int y2 = baseY - (k + 1) * 16;
+                int x2 = baseX + (int)(sinf(g->animTime * 1.6f + (float)i + (float)(k + 1) * 0.5f) * 6.0f);
+                line(x1, y1, x2, y2);
+            }
         }
     }
 
@@ -145,7 +194,22 @@ static void render_fish(const Fish* f) {
     int hh = (int)f->halfH;
     int dir = f->vx >= 0.0f ? 1 : -1;
 
+    if (assets_ok() && (f->type == FISH_SMALL || f->type == FISH_BIG)) {
+        SpriteId id = (f->type == FISH_SMALL)
+            ? (SpriteId)(SPR_SMALL0 + f->variant % 3)
+            : (SpriteId)(SPR_BIG0 + f->variant % 2);
+        IMAGE* img = assets_get(id, dir < 0);
+        if (img) {
+            /* 保持 64×64 素材的原始长宽比，避免把鱼压扁 */
+            draw_sprite(img, x, y, hw * 2, hw * 2);
+            return;
+        }
+    }
+
     if (f->type == FISH_BOMB) {
+        float pulse = 0.5f + 0.5f * sinf((float)GetTickCount() / 150.0f);
+        setlinecolor(RGB(255, 110, 70));
+        circle(x, y, hw + 4 + (int)(4.0f * pulse));
         setfillcolor(RGB(45, 45, 55));
         setlinecolor(RGB(20, 20, 25));
         solidcircle(x, y, hw);
@@ -158,6 +222,9 @@ static void render_fish(const Fish* f) {
     }
 
     if (f->type == FISH_CLOCK) {
+        float pulse = 0.5f + 0.5f * sinf((float)GetTickCount() / 180.0f);
+        setlinecolor(RGB(255, 235, 130));
+        circle(x, y, hw + 3 + (int)(3.0f * pulse));
         setfillcolor(RGB(245, 200, 70));
         setlinecolor(RGB(190, 140, 30));
         solidcircle(x, y, hw);
@@ -232,7 +299,12 @@ static void render_player(const Game* g) {
     bool inv = player_invulnerable(p);
     bool blink = inv && ((GetTickCount() / 100) % 2 == 0);
 
-    if (!blink) {
+    if (!blink && assets_ok()) {
+        IMAGE* img = assets_get(SPR_PLAYER, dir < 0);
+        if (img) {
+            draw_sprite(img, x, y, hw * 2, hw * 2);
+        }
+    } else if (!blink) {
         setfillcolor(RGB(60, 190, 150));
         setlinecolor(RGB(60, 190, 150));
         solidellipse(x - hw, y - hh, x + hw, y + hh);
@@ -331,6 +403,10 @@ static void render_info_panel(const Game* g) {
     text_at(x, y, buf, 17, C_TEXT, false);
     y += 30;
 
+    swprintf_s(buf, 128, L"模式：%ls", g->mode == MODE_TIME ? L"时间模式" : L"生命模式");
+    text_at(x, y, buf, 17, C_TEXT, false);
+    y += 30;
+
     swprintf_s(buf, 128, L"最高分：%d", g->highScore);
     text_at(x, y, buf, 17, C_TEXT, false);
     y += 30;
@@ -343,27 +419,34 @@ static void render_info_panel(const Game* g) {
     text_at(x, y, buf, 17, C_TEXT, false);
     y += 30;
 
-    swprintf_s(buf, 128, L"剩余时间：%.1f s", g->timeLeft);
-    text_at(x, y, buf, 17, C_TEXT, false);
-    y += 26;
+    if (g->mode == MODE_TIME) {
+        swprintf_s(buf, 128, L"剩余时间：%.1f s", g->timeLeft);
+        text_at(x, y, buf, 17, C_TEXT, false);
+        y += 26;
 
-    int barX = x;
-    int barY = y;
-    int barW = INFO_W - 40;
-    int barH = 10;
-    setfillcolor(RGB(28, 48, 68));
-    solidrectangle(barX, barY, barX + barW, barY + barH);
-    float t = clampf(g->timeLeft / INITIAL_TIME, 0.0f, 1.0f);
-    COLORREF barColor = RGB(90, 210, 130);
-    if (t <= 0.5f) {
-        barColor = RGB(245, 200, 70);
+        int barX = x;
+        int barY = y;
+        int barW = INFO_W - 40;
+        int barH = 10;
+        setfillcolor(RGB(28, 48, 68));
+        solidrectangle(barX, barY, barX + barW, barY + barH);
+        float t = clampf(g->timeLeft / INITIAL_TIME, 0.0f, 1.0f);
+        COLORREF barColor = RGB(90, 210, 130);
+        if (t <= 0.5f) {
+            barColor = RGB(245, 200, 70);
+        }
+        if (t <= 0.2f) {
+            barColor = RGB(240, 90, 90);
+        }
+        setfillcolor(barColor);
+        solidrectangle(barX, barY, barX + (int)(barW * t), barY + barH);
+        y += 24;
+    } else {
+        text_at(x, y, L"生命模式：无时间限制", 16, RGB(180, 220, 250), false);
+        y += 24;
+        text_at(x, y, L"闹钟 +1 命 / 炸弹 -1 命", 15, RGB(160, 200, 230), false);
+        y += 30;
     }
-    if (t <= 0.2f) {
-        barColor = RGB(240, 90, 90);
-    }
-    setfillcolor(barColor);
-    solidrectangle(barX, barY, barX + (int)(barW * t), barY + barH);
-    y += 24;
 
     swprintf_s(buf, 128, L"生命：%d", g->player.lives);
     text_at(x, y, buf, 17, C_TEXT, false);
@@ -377,16 +460,18 @@ static void render_info_panel(const Game* g) {
 
     text_at(x, y, L"排行榜", 20, C_ACCENT, true);
     y += 30;
-    int top = g->recordCount < 3 ? g->recordCount : 3;
+    int top = g->recordCount < 5 ? g->recordCount : 5;
     for (int i = 0; i < top; i++) {
         swprintf_s(buf, 128, L"%d. %ls  %d", i + 1, g->records[i].name, g->records[i].score);
         text_at(x, y, buf, 15, RGB(200, 220, 240), false);
         y += 22;
     }
 
-    text_at(x, WIN_H - 92, L"操作：", 16, RGB(160, 190, 220), true);
-    text_at(x, WIN_H - 68, L"方向键 / WASD 移动", 15, RGB(180, 205, 230), false);
-    text_at(x, WIN_H - 46, L"P 暂停    ESC 结束", 15, RGB(180, 205, 230), false);
+    text_at(x, WIN_H - 112, L"操作：", 16, RGB(160, 190, 220), true);
+    text_at(x, WIN_H - 88, L"方向键 / WASD / 鼠标按住", 14, RGB(180, 205, 230), false);
+    text_at(x, WIN_H - 64, L"P 暂停    ESC 结束", 14, RGB(180, 205, 230), false);
+    swprintf_s(buf, 128, L"M 模式    S 音效：%ls", sound_is_enabled() ? L"开" : L"关");
+    text_at(x, WIN_H - 40, buf, 14, RGB(180, 205, 230), false);
 }
 
 static void render_overlay_panel(int x, int y, int w, int h) {
@@ -396,16 +481,21 @@ static void render_overlay_panel(int x, int y, int w, int h) {
     roundrect(x, y, x + w, y + h, 16, 16);
 }
 
-static void render_menu_overlay(void) {
+static void render_menu_overlay(const Game* g) {
     int x = 155;
-    int y = 250;
+    int y = 235;
     int w = 450;
-    int h = 170;
+    int h = 215;
     render_overlay_panel(x, y, w, h);
-    text_center(GAME_W / 2, y + 24, L"准备开始", 30, C_ACCENT, true);
-    text_center(GAME_W / 2, y + 68, L"吃掉小鱼，躲避大鱼和炸弹", 18, C_TEXT, false);
-    text_center(GAME_W / 2, y + 98, L"闹钟加时间，炸弹减时间", 18, C_TEXT, false);
-    text_center(GAME_W / 2, y + 130, L"点击【开始游戏】或按 Enter", 18, RGB(150, 220, 255), true);
+    text_center(GAME_W / 2, y + 22, L"准备开始", 30, C_ACCENT, true);
+    text_center(GAME_W / 2, y + 64, L"吃掉小鱼，躲避大鱼和炸弹", 18, C_TEXT, false);
+    text_center(GAME_W / 2, y + 92, L"闹钟加时间 / 炸弹减时间", 18, C_TEXT, false);
+
+    wchar_t buf[64];
+    swprintf_s(buf, 64, L"当前模式：%ls", g->mode == MODE_TIME ? L"时间模式" : L"生命模式");
+    text_center(GAME_W / 2, y + 124, buf, 18, C_ACCENT, true);
+    text_center(GAME_W / 2, y + 152, L"按 M 切换模式，S 开关音效", 15, RGB(170, 205, 235), false);
+    text_center(GAME_W / 2, y + 180, L"点击【开始游戏】或按 Enter", 18, RGB(150, 220, 255), true);
 }
 
 static void render_pause_overlay(const Game* g) {
@@ -498,6 +588,26 @@ static void render_login(const Game* g) {
                 L"方向键 / WASD 移动    P 暂停    ESC 结束", 16, RGB(130, 170, 200), false);
 }
 
+static void render_popups(const Game* g) {
+    DWORD now = GetTickCount();
+    for (int i = 0; i < g->popupCount; i++) {
+        const Popup* p = &g->popups[i];
+        DWORD ageMs = now - p->born;
+        if (ageMs > 900) {
+            continue;
+        }
+        float age = (float)ageMs / 1000.0f;
+        int x = GAME_X + (int)p->x;
+        int y = GAME_Y + (int)p->y - (int)(age * 45.0f);
+        COLORREF color = (age > 0.6f) ? RGB(170, 185, 200) : p->color;
+
+        set_font(18, true);
+        setbkmode(TRANSPARENT);
+        settextcolor(color);
+        outtextxy(x - textwidth(p->text) / 2, y, p->text);
+    }
+}
+
 void render_frame(const Game* g) {
     if (g->state == STATE_LOGIN) {
         render_login(g);
@@ -510,12 +620,13 @@ void render_frame(const Game* g) {
     if (g->state != STATE_MENU) {
         render_player(g);
     }
+    render_popups(g);
 
     render_topbar(g);
     render_info_panel(g);
 
     if (g->state == STATE_MENU) {
-        render_menu_overlay();
+        render_menu_overlay(g);
     } else if (g->state == STATE_PAUSED) {
         render_pause_overlay(g);
     } else if (g->state == STATE_OVER) {

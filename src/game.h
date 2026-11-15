@@ -7,6 +7,7 @@
 
 typedef struct Game {
     GameState state;
+    GameMode mode;
     Player player;
     FishList fish;
     FishList eaten;
@@ -28,6 +29,9 @@ typedef struct Game {
     int mouseY;
     int viewW;
     int viewH;
+
+    Popup popups[MAX_POPUPS];
+    int popupCount;
 } Game;
 
 void game_init(Game* g, int viewW, int viewH);
