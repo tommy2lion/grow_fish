@@ -6,8 +6,13 @@
 *.doc
 *.docx
 
-# tools
-/tools/*
+# generated output
+/spacex/*
+
+# python
+/.venv
+__pycache__/
+*.pyc
 
 # for claude cli
 /package.json
