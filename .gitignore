@@ -8,6 +8,9 @@
 
 # reference code
 /refer/*
+/refer
+/doc/*
+/doc
 
 # generated output
 /spacex/*
