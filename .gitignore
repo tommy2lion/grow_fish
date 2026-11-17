@@ -5,6 +5,7 @@
 /.claude
 *.doc
 *.docx
+!docs/20261117223332-课程设计报告.docx
 
 # reference code
 /refer/*

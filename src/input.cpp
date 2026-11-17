@@ -18,6 +18,7 @@ void input_update(Input* in) {
     memset(in->pressed, 0, sizeof(in->pressed));
     in->mouseClicked = false;
     in->charCount = 0;
+    in->ctrlB = false;
 
     ExMessage msg;
     while (peekmessage(&msg, (BYTE)-1)) {
@@ -25,6 +26,10 @@ void input_update(Input* in) {
         case WM_KEYDOWN:
             if (!in->down[msg.vkcode]) {
                 in->pressed[msg.vkcode] = true;
+            }
+            if (msg.vkcode == 'B' &&
+                (in->down[VK_CONTROL] || in->down[VK_LCONTROL] || in->down[VK_RCONTROL])) {
+                in->ctrlB = true;
             }
             in->down[msg.vkcode] = true;
             break;

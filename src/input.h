@@ -11,6 +11,7 @@ typedef struct {
     int mouseY;
     wchar_t chars[64];
     int charCount;
+    bool ctrlB;     /* B 按下时 Ctrl 是否处于按下状态 */
     bool quit;
 } Input;
 

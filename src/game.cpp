@@ -288,10 +288,7 @@ void game_update(Game* g, Input* in, float dt) {
         }
     }
 
-    bool ctrlDown = input_down(in, VK_CONTROL) ||
-                    input_down(in, VK_LCONTROL) ||
-                    input_down(in, VK_RCONTROL);
-    if (ctrlDown && input_pressed(in, 'B')) {
+    if (in->ctrlB) {
         g->bugMode = !g->bugMode;
         sound_play(L"click.wav");
         wchar_t msg[32];
