@@ -69,6 +69,7 @@ void game_init(Game* g, int viewW, int viewH) {
     g->animTime = 0.0f;
     g->win = false;
     g->recordSaved = false;
+    g->bugMode = false;
     g->loginName[0] = 0;
     g->loginLen = 0;
     g->loginMessage[0] = 0;
@@ -209,12 +210,14 @@ static void game_check_collisions(Game* g) {
                     eaten->alive = false;
                     fishlist_append(&g->eaten, eaten);
                 }
-                if (g->player.score >= g->targetScore) {
+                if (!g->bugMode && g->player.score >= g->targetScore) {
                     game_finish(g, true);
                     return;
                 }
             } else if (f->type == FISH_BIG) {
-                if (!player_invulnerable(&g->player)) {
+                if (g->bugMode) {
+                    /* BUG 模式：大鱼不造成伤害，玩家可以直接穿过 */
+                } else if (!player_invulnerable(&g->player)) {
                     g->player.lives--;
                     g->player.invulnUntil = GetTickCount() + 1500;
                     sound_play(L"hit.wav");
@@ -225,10 +228,14 @@ static void game_check_collisions(Game* g) {
                         return;
                     }
                 }
-                fishlist_remove(&g->fish, f);
+                if (!g->bugMode) {
+                    fishlist_remove(&g->fish, f);
+                }
             } else if (f->type == FISH_BOMB) {
                 sound_play(L"bomb.wav");
-                if (g->mode == MODE_TIME) {
+                if (g->bugMode) {
+                    popup_add(g, f->x, f->y, L"BUG 免疫", RGB(255, 180, 120));
+                } else if (g->mode == MODE_TIME) {
                     g->timeLeft -= 5.0f;
                     if (g->timeLeft < 0.0f) {
                         g->timeLeft = 0.0f;
@@ -239,7 +246,7 @@ static void game_check_collisions(Game* g) {
                     popup_add(g, f->x, f->y, L"-1 生命", RGB(255, 130, 130));
                 }
                 fishlist_remove(&g->fish, f);
-                if (g->mode == MODE_LIFE && g->player.lives <= 0) {
+                if (!g->bugMode && g->mode == MODE_LIFE && g->player.lives <= 0) {
                     game_finish(g, false);
                     return;
                 }
@@ -279,6 +286,18 @@ void game_update(Game* g, Input* in, float dt) {
         if (on) {
             sound_play(L"click.wav");
         }
+    }
+
+    bool ctrlDown = input_down(in, VK_CONTROL) ||
+                    input_down(in, VK_LCONTROL) ||
+                    input_down(in, VK_RCONTROL);
+    if (ctrlDown && input_pressed(in, 'B')) {
+        g->bugMode = !g->bugMode;
+        sound_play(L"click.wav");
+        wchar_t msg[32];
+        swprintf_s(msg, 32, g->bugMode ? L"BUG 模式：开" : L"BUG 模式：关");
+        popup_add(g, g->player.x, g->player.y - 30.0f, msg,
+                  g->bugMode ? RGB(255, 120, 120) : RGB(190, 210, 230));
     }
 
     game_handle_buttons(g, in);
@@ -331,7 +350,7 @@ void game_update(Game* g, Input* in, float dt) {
         if (g->state != STATE_PLAYING) {
             break;
         }
-        if (g->mode == MODE_TIME) {
+        if (g->mode == MODE_TIME && !g->bugMode) {
             g->timeLeft -= dt;
             if (g->timeLeft <= 0.0f) {
                 g->timeLeft = 0.0f;

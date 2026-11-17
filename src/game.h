@@ -20,6 +20,7 @@ typedef struct Game {
     float animTime;
     bool win;
     bool recordSaved;
+    bool bugMode;
 
     wchar_t loginName[MAX_NAME];
     int loginLen;

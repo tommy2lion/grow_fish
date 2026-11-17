@@ -383,7 +383,8 @@ static void render_topbar(const Game* g) {
     render_button(BTN_END_X, BTN_Y, BTN_W, BTN_H, endLabel,
                   hover_btn(g, BTN_END_X) && endEnabled, endEnabled);
 
-    text_at(GAME_W - 250, 14, L"大鱼吃小鱼", 26, C_ACCENT, true);
+    text_at(GAME_W - 250, 14, L"大鱼吃小鱼", 26,
+            g->bugMode ? RGB(255, 120, 120) : C_ACCENT, true);
 }
 
 static void render_info_panel(const Game* g) {
@@ -407,6 +408,10 @@ static void render_info_panel(const Game* g) {
     text_at(x, y, buf, 17, C_TEXT, false);
     y += 30;
 
+    swprintf_s(buf, 128, L"BUG 模式：%ls", g->bugMode ? L"开" : L"关");
+    text_at(x, y, buf, 17, g->bugMode ? RGB(255, 150, 130) : C_TEXT, false);
+    y += 30;
+
     swprintf_s(buf, 128, L"最高分：%d", g->highScore);
     text_at(x, y, buf, 17, C_TEXT, false);
     y += 30;
@@ -420,27 +425,32 @@ static void render_info_panel(const Game* g) {
     y += 30;
 
     if (g->mode == MODE_TIME) {
-        swprintf_s(buf, 128, L"剩余时间：%.1f s", g->timeLeft);
-        text_at(x, y, buf, 17, C_TEXT, false);
-        y += 26;
+        if (g->bugMode) {
+            text_at(x, y, L"剩余时间：∞（BUG 模式）", 17, RGB(255, 170, 140), false);
+            y += 30;
+        } else {
+            swprintf_s(buf, 128, L"剩余时间：%.1f s", g->timeLeft);
+            text_at(x, y, buf, 17, C_TEXT, false);
+            y += 26;
 
-        int barX = x;
-        int barY = y;
-        int barW = INFO_W - 40;
-        int barH = 10;
-        setfillcolor(RGB(28, 48, 68));
-        solidrectangle(barX, barY, barX + barW, barY + barH);
-        float t = clampf(g->timeLeft / INITIAL_TIME, 0.0f, 1.0f);
-        COLORREF barColor = RGB(90, 210, 130);
-        if (t <= 0.5f) {
-            barColor = RGB(245, 200, 70);
+            int barX = x;
+            int barY = y;
+            int barW = INFO_W - 40;
+            int barH = 10;
+            setfillcolor(RGB(28, 48, 68));
+            solidrectangle(barX, barY, barX + barW, barY + barH);
+            float t = clampf(g->timeLeft / INITIAL_TIME, 0.0f, 1.0f);
+            COLORREF barColor = RGB(90, 210, 130);
+            if (t <= 0.5f) {
+                barColor = RGB(245, 200, 70);
+            }
+            if (t <= 0.2f) {
+                barColor = RGB(240, 90, 90);
+            }
+            setfillcolor(barColor);
+            solidrectangle(barX, barY, barX + (int)(barW * t), barY + barH);
+            y += 24;
         }
-        if (t <= 0.2f) {
-            barColor = RGB(240, 90, 90);
-        }
-        setfillcolor(barColor);
-        solidrectangle(barX, barY, barX + (int)(barW * t), barY + barH);
-        y += 24;
     } else {
         text_at(x, y, L"生命模式：无时间限制", 16, RGB(180, 220, 250), false);
         y += 24;
@@ -470,7 +480,7 @@ static void render_info_panel(const Game* g) {
     text_at(x, WIN_H - 112, L"操作：", 16, RGB(160, 190, 220), true);
     text_at(x, WIN_H - 88, L"方向键 / WASD / 鼠标按住", 14, RGB(180, 205, 230), false);
     text_at(x, WIN_H - 64, L"P 暂停    ESC 结束", 14, RGB(180, 205, 230), false);
-    swprintf_s(buf, 128, L"M 模式    S 音效：%ls", sound_is_enabled() ? L"开" : L"关");
+    swprintf_s(buf, 128, L"M 模式  S 音效：%ls  Ctrl+B BUG", sound_is_enabled() ? L"开" : L"关");
     text_at(x, WIN_H - 40, buf, 14, RGB(180, 205, 230), false);
 }
 
@@ -494,7 +504,7 @@ static void render_menu_overlay(const Game* g) {
     wchar_t buf[64];
     swprintf_s(buf, 64, L"当前模式：%ls", g->mode == MODE_TIME ? L"时间模式" : L"生命模式");
     text_center(GAME_W / 2, y + 124, buf, 18, C_ACCENT, true);
-    text_center(GAME_W / 2, y + 152, L"按 M 切换模式，S 开关音效", 15, RGB(170, 205, 235), false);
+    text_center(GAME_W / 2, y + 150, L"M 模式   S 音效   Ctrl+B BUG", 15, RGB(170, 205, 235), false);
     text_center(GAME_W / 2, y + 180, L"点击【开始游戏】或按 Enter", 18, RGB(150, 220, 255), true);
 }
 
